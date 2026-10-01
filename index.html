@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Paperball — Your Street, in Paper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Patrick+Hand&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.156.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.156.1/examples/jsm/",
+      "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="hud" class="hidden">
+    <div id="stats" class="paper">
+      <div><span class="label">Shots</span><span class="value" id="stat-shots">0</span></div>
+      <div><span class="label">Hits</span><span class="value" id="stat-hits">0</span></div>
+      <div><span class="label">Acc</span><span class="value" id="stat-acc">0%</span></div>
+      <div><span class="label">Left</span><span class="value" id="stat-targets">--</span></div>
+      <div class="ammo-bar" id="ammo-bar"></div>
+    </div>
+    <div id="timer" class="paper">00:00</div>
+    <div id="location-label" class="paper"></div>
+    <div id="crosshair"></div>
+    <div id="hit-flash"></div>
+    <div id="attribution">© OpenStreetMap contributors</div>
+
+    <div id="mobile-controls" class="hidden">
+      <div id="joystick-zone"></div>
+      <div id="look-zone"></div>
+      <button id="btn-jump" aria-label="Jump">⤒</button>
+      <button id="btn-fire" aria-label="Fire">●</button>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <div class="card paper">
+      <h1 id="overlay-title">Paperball</h1>
+      <div id="overlay-sub">Paint the neighbors. On your actual street.</div>
+
+      <form id="search-form" autocomplete="off">
+        <input id="search-input" type="text" placeholder="Type an address or street…" />
+        <button id="search-btn" type="submit">Go</button>
+      </form>
+
+      <table class="controls" id="controls-desktop">
+        <tr><td>WASD</td><td>Move</td></tr>
+        <tr><td>Mouse</td><td>Aim</td></tr>
+        <tr><td>Click</td><td>Fire</td></tr>
+        <tr><td>Space / Shift</td><td>Jump / Sprint</td></tr>
+      </table>
+      <table class="controls hidden" id="controls-mobile">
+        <tr><td>Left thumb</td><td>Move</td></tr>
+        <tr><td>Right drag</td><td>Aim</td></tr>
+        <tr><td>● / ⤒</td><td>Fire / Jump</td></tr>
+      </table>
+
+      <button id="start-btn" disabled>Loading…</button>
+      <div id="loading-msg">Starting up…</div>
+    </div>
+  </div>
+
+  <div id="win-screen" class="hidden">
+    <div class="card paper">
+      <h1>Block Painted!</h1>
+      <div id="win-stats"></div>
+      <button id="restart-btn">Play Again</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.1/dist/nipplejs.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
