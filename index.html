@@ -48,7 +48,11 @@
       <div id="overlay-sub">Paint the neighbors. On your actual street.</div>
 
       <form id="search-form" autocomplete="off">
-        <input id="search-input" type="text" placeholder="Type an address or street…" />
+        <input id="street-input" type="text" placeholder="Street address, e.g. 3522 Willow Lake Lane" autocapitalize="words" />
+        <div class="row">
+          <input id="city-input" type="text" placeholder="City" autocapitalize="words" />
+          <select id="state-input" aria-label="State"></select>
+        </div>
         <button id="search-btn" type="submit">Go</button>
       </form>
 

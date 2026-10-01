@@ -1,7 +1,7 @@
 // Paperball — boot orchestrator. Owned by integrator.
 import * as THREE from 'three';
 import { CONFIG, IS_MOBILE } from './config.js';
-import { resolveCenter, loadWorld, geocode } from './geo.js';
+import { resolveCenter, loadWorld, geocodeAddress, US_STATES } from './geo.js';
 import { setupEnvironment } from './toon.js';
 import { buildHouses } from './houses.js';
 import { buildStreets } from './streets.js';
@@ -30,20 +30,37 @@ function setupRenderer() {
 }
 
 function wireSearch() {
+  // State dropdown (default Enid, OK; restored from the URL after a search)
+  const sp = new URLSearchParams(location.search);
+  const sel = $('state-input');
+  for (const [abbr, name] of Object.entries(US_STATES)) {
+    const o = document.createElement('option');
+    o.value = abbr; o.textContent = abbr; o.title = name;
+    sel.appendChild(o);
+  }
+  sel.value = (sp.get('st') || CONFIG.default_center.state || 'OK').toUpperCase();
+  $('city-input').value = sp.get('c') || CONFIG.default_center.city || 'Enid';
+  $('street-input').value = sp.get('s') || '';
+
   $('search-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const q = $('search-input').value.trim();
-    if (!q) return;
+    const street = $('street-input').value.trim();
+    const city = $('city-input').value.trim();
+    const state = $('state-input').value;
+    if (!city) { status('Enter a city.'); return; }
     $('search-btn').disabled = true;
-    status(`Finding "${q}"…`);
-    const hit = await geocode(q);
+    status(`Finding ${street ? street + ', ' : ''}${city}, ${state}…`);
+    const hit = await geocodeAddress({ street, city, state });
     if (!hit) {
-      status(`Couldn't find "${q}". Try street + city, e.g. "Maple Ave, Enid OK".`);
+      status(`Couldn't find "${street}" in ${city}, ${state}. Check the spelling, or try just the street name without the number.`);
       $('search-btn').disabled = false;
       return;
     }
-    // Clean reload keeps state simple and makes the location shareable/bookmarkable.
-    const p = new URLSearchParams({ lat: hit.lat.toFixed(6), lon: hit.lon.toFixed(6), label: hit.label });
+    // Reload with explicit coordinates: bookmarkable, and the geocoder can't re-"correct" it on load.
+    const p = new URLSearchParams({
+      lat: hit.lat.toFixed(6), lon: hit.lon.toFixed(6), label: hit.label, prec: hit.precision,
+      s: street, c: city, st: state,
+    });
     location.search = p.toString();
   });
 }
@@ -60,7 +77,6 @@ async function boot() {
   status('Locating…');
   const center = await resolveCenter(CONFIG);
   const params = new URLSearchParams(location.search);
-  if (params.get('q') || params.get('label')) $('search-input').value = params.get('label') || params.get('q');
 
   status('Fetching your neighborhood from OpenStreetMap…');
   const world = await loadWorld(center, CONFIG, status);
@@ -101,7 +117,10 @@ async function boot() {
     retry.href = location.href; retry.textContent = 'Retry'; retry.style.cssText = 'font-weight:bold;color:#e63946';
     el.append(retry);
   } else {
-    status(`${houses.count} houses · ${streets.signCount} street signs · ${label}`);
+    const prec = params.get('prec');
+    const note = prec === 'street' ? ' · centered on the street (exact house not in OpenStreetMap)'
+               : prec === 'city' ? ' · centered on the city' : '';
+    status(`${houses.count} houses · ${streets.signCount} street signs · ${label}${note}`);
   }
   const btn = $('start-btn');
   btn.disabled = false;

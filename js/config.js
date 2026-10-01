@@ -5,7 +5,7 @@ export const IS_MOBILE =
 
 export const CONFIG = {
   // Default location: downtown Enid, OK. Override with ?q=<address> or ?lat=..&lon=..
-  default_center: { lat: 36.3956, lon: -97.8784, label: 'Enid, OK' },
+  default_center: { lat: 36.3956, lon: -97.8784, label: 'Enid, OK', city: 'Enid', state: 'OK' },
 
   radius_m:        IS_MOBILE ? 160 : 260,   // Overpass bbox half-size
   max_buildings:   IS_MOBILE ? 180 : 450,

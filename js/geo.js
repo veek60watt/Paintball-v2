@@ -53,6 +53,72 @@ export async function geocode(query) {
   }
 }
 
+const US_STATES = {
+  AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',
+  FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',
+  LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',
+  MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',
+  NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',
+  SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',
+  WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',DC:'District of Columbia',
+};
+export { US_STATES };
+
+// Structured address search: street / city / state are sent as separate Nominatim fields so the
+// geocoder cannot "correct" the address into a different town. Results are rejected unless they
+// are in the requested state. Returns { lat, lon, label, precision: 'house'|'street'|'city', found } or null.
+// Labels never contain house numbers.
+export async function geocodeAddress({ street, city, state }) {
+  try {
+    const st = String(state || '').trim().toUpperCase();
+    const stateName = US_STATES[st] || String(state || '').trim();
+    const cityQ = String(city || '').trim();
+    const streetQ = String(street || '').trim();
+    if (!cityQ || !stateName) return null;
+    const num = (streetQ.match(/^(\d+[a-zA-Z]?)\b/) || [])[1] || null;
+    const streetOnly = streetQ.replace(/^\d+[a-zA-Z]?\s+/, '');
+    const base = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=us&limit=5';
+    const enc = encodeURIComponent;
+    const inState = (r) => {
+      const a = r.address || {};
+      return a.state === stateName || a['ISO3166-2-lvl4'] === 'US-' + st;
+    };
+    const attempts = [];
+    if (streetQ) attempts.push(streetQ);
+    if (streetQ && streetOnly && streetOnly !== streetQ) attempts.push(streetOnly);
+    for (let i = 0; i < attempts.length; i++) {
+      const url = base + '&street=' + enc(attempts[i]) + '&city=' + enc(cityQ) + '&state=' + enc(stateName);
+      const arr = await fetchJSON(url, { headers: { Accept: 'application/json' } }, 8000);
+      const ok = (Array.isArray(arr) ? arr : []).filter(inState);
+      if (!ok.length) continue;
+      // Prefer an exact house-number match, then anything on the street.
+      const exact = num && ok.find((r) => String((r.address || {}).house_number || '').toLowerCase() === num.toLowerCase());
+      const r = exact || ok[0];
+      const a = r.address || {};
+      const town = a.city || a.town || a.village || a.hamlet || cityQ;
+      const road = a.road || streetOnly;
+      return {
+        lat: parseFloat(r.lat),
+        lon: parseFloat(r.lon),
+        label: [road, town, st || stateName].filter(Boolean).join(', '),
+        precision: exact ? 'house' : 'street',
+        found: String(r.display_name || '').replace(/^\d+[a-zA-Z]?,\s*/, ''),
+      };
+    }
+    // City-level fallback (no street, or street not found): still pinned to the right state.
+    const cu = base + '&city=' + enc(cityQ) + '&state=' + enc(stateName);
+    const carr = await fetchJSON(cu, { headers: { Accept: 'application/json' } }, 8000);
+    const cok = (Array.isArray(carr) ? carr : []).filter(inState);
+    if (cok.length && !streetQ) {
+      const r = cok[0];
+      return { lat: parseFloat(r.lat), lon: parseFloat(r.lon), label: cityQ + ', ' + (st || stateName), precision: 'city', found: r.display_name || '' };
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function resolveCenter(CONFIG) {
   const dflt = (CONFIG && CONFIG.default_center) || { lat: 36.3956, lon: -97.8784, label: 'Enid, OK' };
   try {
