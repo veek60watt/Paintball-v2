@@ -167,7 +167,7 @@ function validElements(json) {
   return json && typeof json === 'object' && Array.isArray(json.elements);
 }
 
-export async function loadWorld(center, CONFIG, onStatus) {
+export async function loadWorld(center, CONFIG, onStatus, opts = {}) {
   const say = (m) => {
     try {
       if (typeof onStatus === 'function') onStatus(m);
@@ -183,13 +183,35 @@ export async function loadWorld(center, CONFIG, onStatus) {
   };
 
   let reason = 'network';
+  const errors = []; // human-readable reasons, surfaced on the start screen if everything fails
+  const usable = (json) => {
+    if (!validElements(json)) throw new Error('bad response');
+    if (json.remark && !json.elements.length) throw new Error('server overloaded');
+    return json;
+  };
+
+  // 1) Preloaded map baked into the site at deploy time (default location only).
+  if (opts.preload) {
+    try {
+      say('Loading map...');
+      const json = usable(await fetchJSON(opts.preload, {}, 8000));
+      const pc = json.center && isFinite(json.center.lat) && isFinite(json.center.lon) ? json.center : c;
+      const world = parseOSM(json, { lat: pc.lat, lon: pc.lon, label: pc.label || c.label }, CONFIG);
+      if (world.buildings.length > 0) { world.source = 'preload'; return world; }
+      errors.push('preload: empty');
+    } catch (err) {
+      errors.push('preload: ' + (err.message || err));
+    }
+  }
+
   try {
     const dLat = R / M_PER_DEG;
     const dLon = R / (M_PER_DEG * Math.cos((c.lat * Math.PI) / 180));
-    const s = (c.lat - dLat).toFixed(6);
-    const n = (c.lat + dLat).toFixed(6);
-    const w = (c.lon - dLon).toFixed(6);
-    const e = (c.lon + dLon).toFixed(6);
+    // 4 decimals (~11 m) so repeat visits hit the CDN cache
+    const s = (c.lat - dLat).toFixed(4);
+    const n = (c.lat + dLat).toFixed(4);
+    const w = (c.lon - dLon).toFixed(4);
+    const e = (c.lon + dLon).toFixed(4);
     const bb = `${s},${w},${n},${e}`;
     const query =
       `[out:json][timeout:25];(` +
@@ -197,10 +219,26 @@ export async function loadWorld(center, CONFIG, onStatus) {
       `way["highway"](${bb});node["natural"="tree"](${bb});` +
       `);out body;>;out skel qt;`;
 
-    for (let i = 0; i < OVERPASS_MIRRORS.length; i++) {
-      say(i === 0 ? 'Downloading map data...' : 'Trying backup map server...');
+    // 2) Our own Netlify proxy (server-side fetch + CDN cache). 404s harmlessly on static hosts.
+    let proxyEmpty = false;
+    try {
+      say('Downloading map data...');
+      const json = usable(await fetchJSON(`api/osm?s=${s}&w=${w}&n=${n}&e=${e}`, {}, 12000));
+      say('Building the neighborhood...');
+      const world = parseOSM(json, c, CONFIG);
+      if (world.buildings.length > 0) { world.source = 'live'; return world; }
+      proxyEmpty = true;
+      reason = 'no-buildings';
+    } catch (err) {
+      errors.push('proxy: ' + (err.name === 'AbortError' ? 'timeout' : err.message || err));
+    }
+
+    // 3) Direct to public Overpass mirrors (skipped if the proxy already proved the area is empty).
+    for (let i = 0; !proxyEmpty && i < OVERPASS_MIRRORS.length; i++) {
+      const host = OVERPASS_MIRRORS[i].split('/')[2];
+      say(i === 0 ? 'Trying map servers directly...' : 'Trying backup map server...');
       try {
-        const json = await fetchJSON(
+        const json = usable(await fetchJSON(
           OVERPASS_MIRRORS[i],
           {
             method: 'POST',
@@ -208,8 +246,7 @@ export async function loadWorld(center, CONFIG, onStatus) {
             body: 'data=' + encodeURIComponent(query),
           },
           10000
-        );
-        if (!validElements(json)) throw new Error('bad json');
+        ));
         say('Building the neighborhood...');
         const world = parseOSM(json, c, CONFIG);
         if (world.buildings.length > 0) {
@@ -220,11 +257,12 @@ export async function loadWorld(center, CONFIG, onStatus) {
         reason = 'no-buildings';
         break; // empty area: a mirror will not help
       } catch (err) {
-        /* try next mirror */
+        errors.push(host + ': ' + (err.name === 'AbortError' ? 'timeout' : err.message || err));
+        if (typeof console !== 'undefined') console.warn('[geo]', host, err);
       }
     }
   } catch (err) {
-    /* fall to fallback */
+    errors.push('loader: ' + (err.message || err));
   }
 
   say('Using the offline sample block...');
@@ -237,11 +275,13 @@ export async function loadWorld(center, CONFIG, onStatus) {
     world.source = 'fallback';
     world.reason = reason;      // 'network' | 'no-buildings'
     world.requested = c;        // what the player actually asked for
+    world.errors = errors;
     return world;
   } catch (err) {
     const w = emptyWorld(c, R, 'fallback');
     w.reason = reason;
     w.requested = c;
+    w.errors = errors;
     return w;
   }
 }

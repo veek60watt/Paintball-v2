@@ -3,21 +3,22 @@
 First-person paintball on **your real street**, rebuilt from OpenStreetMap in a flat cut-paper cartoon style. No API keys, no build step.
 
 ## Run
-```bash
-cd paperball
-python3 -m http.server 8080
-# open http://localhost:8080
-```
-Must be served over HTTP (ES modules). Opening `index.html` from disk won't work.
+Live: pushes to `main` auto-deploy to Netlify (`paintball-v2`).
+
+Local: `python3 -m http.server 8080` then open http://localhost:8080 (the `/api/osm` proxy only runs on Netlify or `netlify dev`; locally the game falls through to direct Overpass calls).
 
 ## Pick your street
-| Method | Example |
-|---|---|
-| Start-screen search box | `Maple Ave, Enid OK` |
-| URL by address | `http://localhost:8080/?q=Maple+Ave+Enid+OK` |
-| URL by coordinates | `http://localhost:8080/?lat=36.3956&lon=-97.8784` |
+Enter **street, city, state** on the start screen (street is optional). Fields are sent to the geocoder separately and any match outside the chosen state is rejected, so it can't "correct" you into another town. The page reloads with `?lat=&lon=` so every location is bookmarkable.
 
-Search reloads the page with `?lat=&lon=` so every location is bookmarkable/shareable. Default is downtown Enid. If OpenStreetMap is unreachable, an offline sample block loads instead (the start screen says so).
+Default location is the crooked block of **Lombard Street, San Francisco**, preloaded into the site at deploy time.
+
+## How map loading works
+| Step | Source | When |
+|---|---|---|
+| 1 | `data/preload_osm.json` (downloaded by `scripts/preload.mjs` during each Netlify build) | Default location only — instant |
+| 2 | `/api/osm` Netlify Function → Overpass, cached on the CDN for a week | Any searched location |
+| 3 | Public Overpass mirrors directly from the browser | If the proxy is unavailable |
+| 4 | `data/fallback_osm.json` offline sample block | Everything failed — start screen says why |
 
 ## What's real vs. guessed
 | From OSM (accurate) | Inferred (best guess) |

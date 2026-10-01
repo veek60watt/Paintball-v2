@@ -38,9 +38,11 @@ function wireSearch() {
     o.value = abbr; o.textContent = abbr; o.title = name;
     sel.appendChild(o);
   }
-  sel.value = (sp.get('st') || CONFIG.default_center.state || 'OK').toUpperCase();
-  $('city-input').value = sp.get('c') || CONFIG.default_center.city || 'Enid';
-  $('street-input').value = sp.get('s') || '';
+  const searched = sp.has('lat') || sp.has('q');
+  const d = CONFIG.default_center;
+  sel.value = (searched ? sp.get('st') : d.state) || d.state;
+  $('city-input').value = (searched ? sp.get('c') : d.city) || '';
+  $('street-input').value = (searched ? sp.get('s') : d.street) || '';
 
   $('search-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -79,7 +81,8 @@ async function boot() {
   const params = new URLSearchParams(location.search);
 
   status('Fetching your neighborhood from OpenStreetMap…');
-  const world = await loadWorld(center, CONFIG, status);
+  const isDefault = !params.has('lat') && !params.has('q');
+  const world = await loadWorld(center, CONFIG, status, isDefault ? { preload: 'data/preload_osm.json' } : {});
 
   status('Cutting out houses…');
   await nextFrame();
@@ -116,6 +119,12 @@ async function boot() {
     const retry = document.createElement('a');
     retry.href = location.href; retry.textContent = 'Retry'; retry.style.cssText = 'font-weight:bold;color:#e63946';
     el.append(retry);
+    if (world.errors?.length) {
+      const det = document.createElement('div');
+      det.style.cssText = 'font-size:12px;opacity:.7;margin-top:6px';
+      det.textContent = 'Details: ' + world.errors.join(' · ');
+      el.append(det);
+    }
   } else {
     const prec = params.get('prec');
     const note = prec === 'street' ? ' · centered on the street (exact house not in OpenStreetMap)'

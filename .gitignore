@@ -1,0 +1,3 @@
+.netlify
+node_modules
+data/preload_osm.json

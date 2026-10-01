@@ -1,2 +1,6 @@
 [build]
   publish = "."
+  command = "node scripts/preload.mjs"
+
+[functions]
+  directory = "netlify/functions"

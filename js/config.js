@@ -4,8 +4,9 @@ export const IS_MOBILE =
   ('ontouchstart' in window && navigator.maxTouchPoints > 1);
 
 export const CONFIG = {
-  // Default location: downtown Enid, OK. Override with ?q=<address> or ?lat=..&lon=..
-  default_center: { lat: 36.3956, lon: -97.8784, label: 'Enid, OK', city: 'Enid', state: 'OK' },
+  // Default location: the crooked block of Lombard Street, San Francisco (preloaded at deploy
+  // time by scripts/preload.mjs). Override with the search form or ?lat=..&lon=..
+  default_center: { lat: 37.80207, lon: -122.41874, label: 'Lombard Street, San Francisco, CA', street: '1000 Lombard Street', city: 'San Francisco', state: 'CA' },
 
   radius_m:        IS_MOBILE ? 160 : 260,   // Overpass bbox half-size
   max_buildings:   IS_MOBILE ? 180 : 450,
