@@ -7,7 +7,9 @@
 const M_PER_DEG = 111320;
 const OVERPASS_MIRRORS = [
   'https://overpass-api.de/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
 ];
 
 // ---------------------------------------------------------------- fetch utils
@@ -42,7 +44,9 @@ export async function geocode(query) {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
-    const label = parts.slice(0, 3).join(', ') || q;
+    // Never show house numbers: drop pure-number parts like "123" or "12B".
+    const clean = parts.filter((x) => !/^\d+[a-zA-Z]?$/.test(x));
+    const label = clean.slice(0, 3).join(', ') || q.replace(/^\d+[a-zA-Z]?\s+/, '');
     return { lat, lon, label };
   } catch (e) {
     return null;
@@ -112,6 +116,7 @@ export async function loadWorld(center, CONFIG, onStatus) {
     label: (center && center.label) || '',
   };
 
+  let reason = 'network';
   try {
     const dLat = R / M_PER_DEG;
     const dLon = R / (M_PER_DEG * Math.cos((c.lat * Math.PI) / 180));
@@ -136,7 +141,7 @@ export async function loadWorld(center, CONFIG, onStatus) {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'data=' + encodeURIComponent(query),
           },
-          15000
+          10000
         );
         if (!validElements(json)) throw new Error('bad json');
         say('Building the neighborhood...');
@@ -146,6 +151,7 @@ export async function loadWorld(center, CONFIG, onStatus) {
           return world;
         }
         say('No buildings found there.');
+        reason = 'no-buildings';
         break; // empty area: a mirror will not help
       } catch (err) {
         /* try next mirror */
@@ -163,9 +169,14 @@ export async function loadWorld(center, CONFIG, onStatus) {
       : c;
     const world = parseOSM(json, fc, CONFIG);
     world.source = 'fallback';
+    world.reason = reason;      // 'network' | 'no-buildings'
+    world.requested = c;        // what the player actually asked for
     return world;
   } catch (err) {
-    return emptyWorld(c, R, 'fallback');
+    const w = emptyWorld(c, R, 'fallback');
+    w.reason = reason;
+    w.requested = c;
+    return w;
   }
 }
 

@@ -87,10 +87,22 @@ async function boot() {
   preview.cx = streets.spawnPoint?.x ?? 0;
   preview.cz = streets.spawnPoint?.z ?? 0;
 
-  const offlineNote = world.source === 'fallback'
-    ? ' (OpenStreetMap unreachable — showing an offline sample block)'
-    : '';
-  status(`${houses.count} houses · ${streets.signCount} street signs · ${label}${offlineNote}`);
+  if (world.source === 'fallback') {
+    const asked = world.requested?.label || center.label;
+    const why = world.reason === 'no-buildings'
+      ? `OpenStreetMap has no buildings mapped near "${asked}".`
+      : `The map servers didn't answer for "${asked}" (they're often busy).`;
+    const el = $('loading-msg');
+    el.textContent = '';
+    const b = document.createElement('b');
+    b.textContent = `Couldn't load ${asked}. `;
+    el.append(b, `${why} Showing an offline sample block instead. `);
+    const retry = document.createElement('a');
+    retry.href = location.href; retry.textContent = 'Retry'; retry.style.cssText = 'font-weight:bold;color:#e63946';
+    el.append(retry);
+  } else {
+    status(`${houses.count} houses · ${streets.signCount} street signs · ${label}`);
+  }
   const btn = $('start-btn');
   btn.disabled = false;
   btn.textContent = IS_MOBILE ? 'Tap to Play' : 'Play';
