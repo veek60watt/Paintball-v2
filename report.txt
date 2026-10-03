@@ -1,0 +1,176 @@
+
+=== POST form UA https://overpass-api.de/api/interpreter  HTTP 406  0.6s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at overpass-api.de Port 443</address>
+</body></html>
+
+=== POST form UA https://lz4.overpass-api.de/api/interpreter  HTTP 406  0.5s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at lz4.overpass-api.de Port 443</address>
+</body></html>
+
+=== POST form UA https://z.overpass-api.de/api/interpreter  HTTP 406  0.6s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at z.overpass-api.de Port 443</address>
+</body></html>
+
+=== POST form UA https://overpass.kumi.systems/api/interpreter  HTTP 000  40.0s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at z.overpass-api.de Port 443</address>
+</body></html>
+curl: (28) Operation timed out after 40001 milliseconds with 0 bytes received
+
+=== POST form UA https://overpass.private.coffee/api/interpreter  HTTP 000  40.0s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at z.overpass-api.de Port 443</address>
+</body></html>
+curl: (28) Operation timed out after 40001 milliseconds with 0 bytes received
+
+=== POST form UA https://maps.mail.ru/osm/tools/overpass/api/interpreter  HTTP 200  15.7s
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.4 2390de5a",
+  "osm3s": {
+    "timestamp_osm_base": "2026-10-03T12:35:36Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "way",
+  "id": 72895487,
+  "nodes": [
+    865187314,
+    12806345557,
+    865187317,
+    3601819896,
+    36018
+=== POST form UA https://overpass.osm.jp/api/interpreter  HTTP 000  0.5s
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.4 2390de5a",
+  "osm3s": {
+    "timestamp_osm_base": "2026-10-03T12:35:36Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "way",
+  "id": 72895487,
+  "nodes": [
+    865187314,
+    12806345557,
+    865187317,
+    3601819896,
+    36018curl: (60) SSL certificate problem: certificate has expired
+More details here: https://curl.se/docs/sslcerts.html
+
+curl failed to verify the legitimacy of the server and therefore could not
+establish 
+=== POST form NO-UA  HTTP 406  0.4s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at overpass-api.de Port 443</address>
+</body></html>
+
+=== POST form browser-UA  HTTP 406  0.4s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at overpass-api.de Port 443</address>
+</body></html>
+
+=== POST form UA+Accept json  HTTP 406  0.4s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at overpass-api.de Port 443</address>
+</body></html>
+
+=== POST form UA+Referer+Origin  HTTP 406  0.4s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at overpass-api.de Port 443</address>
+</body></html>
+
+=== GET UA  HTTP 406  0.4s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at overpass-api.de Port 443</address>
+</body></html>
+
+=== POST raw body UA  HTTP 406  0.4s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at overpass-api.de Port 443</address>
+</body></html>
+
+=== status page  HTTP 406  0.4s
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+<title>406 Not Acceptable</title>
+</head><body>
+<h1>Not Acceptable</h1>
+<p>An appropriate representation of the requested resource could not be found on this server.</p>
+<hr>
+<address>Apache/2.4.68 (Debian) Server at overpass-api.de Port 443</address>
+</body></html>
