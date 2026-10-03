@@ -1,0 +1,36 @@
+name: Live smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+concurrency:
+  group: smoke
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Wait for Netlify to publish this commit
+        if: github.event_name == 'push'
+        run: sleep 180
+      - name: Install headless Chrome
+        run: npm i --no-save playwright@1.47.2 && npx playwright install --with-deps chromium
+      - name: Run smoke test against the live site
+        run: node tests/smoke.mjs
+      - name: Publish results to verify-results branch
+        if: always()
+        run: |
+          cd verify
+          git init -q -b verify-results
+          git config user.name "smoke-bot"
+          git config user.email "smoke-bot@users.noreply.github.com"
+          git add -A
+          git commit -qm "Smoke results for ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" verify-results
