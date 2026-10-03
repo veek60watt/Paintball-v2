@@ -236,9 +236,13 @@ export async function loadWorld(center, CONFIG, onStatus, opts = {}) {
     }
 
     // 3) Direct to public Overpass mirrors (skipped if the proxy already proved the area is empty).
-    for (let i = 0; !proxyEmpty && i < OVERPASS_MIRRORS.length; i++) {
+    // mail.ru (index 0) gets up to 3 tries: it answers 504 when busy but usually succeeds on a retry.
+    const plan = [0, 0, 0, ...OVERPASS_MIRRORS.map((_, k) => k).slice(1)];
+    for (let p = 0; !proxyEmpty && p < plan.length; p++) {
+      const i = plan[p];
       const host = OVERPASS_MIRRORS[i].split('/')[2];
-      say(i === 0 ? 'Trying map servers directly...' : 'Trying backup map server...');
+      if (p > 0 && p < 3) await new Promise((r) => setTimeout(r, 2500 * p));
+      say(p === 0 ? 'Map server busy, trying directly...' : p < 3 ? `Map server busy, retrying (${p + 1}/3)...` : 'Trying backup map server...');
       try {
         const json = usable(await fetchJSON(
           OVERPASS_MIRRORS[i],
@@ -247,7 +251,7 @@ export async function loadWorld(center, CONFIG, onStatus, opts = {}) {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'data=' + encodeURIComponent(query),
           },
-          i === 0 ? 30000 : 12000
+          i === 0 ? 25000 : 12000
         ));
         say('Building the neighborhood...');
         const world = parseOSM(json, c, CONFIG);

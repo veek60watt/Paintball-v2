@@ -73,7 +73,22 @@ export default async (req: Request) => {
     }
   };
 
-  const pending = MIRRORS.map(attempt);
+  // maps.mail.ru often answers 504 when busy and succeeds on a retry: retry 5xx while time remains.
+  const withRetry = async (m: [string, number]) => {
+    let first = true;
+    for (;;) {
+      try {
+        return await attempt(first ? m : [m[0], 0]);
+      } catch (err) {
+        first = false;
+        const msg = (err as Error).message || "";
+        const left = BUDGET_MS - (Date.now() - started);
+        if (done || !/^HTTP 5\d\d/.test(msg) || left < 7000) throw err;
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+  };
+  const pending = MIRRORS.map(withRetry);
   try {
     const { res } = await Promise.any(pending);
     done = true;
