@@ -1,5 +1,6 @@
-// Netlify build step: download the default location's map into data/preload_osm.json so the
-// start screen loads instantly without any live map-server call. Never fails the build.
+// Downloads the default location's map into data/preload_osm.json so the start screen loads instantly
+// without any live map-server call. Run by .github/workflows/preload.yml (GitHub's servers can reach
+// Overpass; Netlify's build servers could not). Never exits non-zero.
 import { readFile, writeFile } from 'node:fs/promises';
 
 // Order matters: as of Oct 2026 maps.mail.ru is the only public server reliably answering cloud IPs
@@ -37,6 +38,7 @@ async function main() {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();
       const els = Array.isArray(json.elements) ? json.elements : [];
+      if (json.remark) throw new Error('partial data: ' + json.remark);
       const buildings = els.filter((e) => e.tags && e.tags.building).length;
       if (!buildings) throw new Error('no buildings in response');
       await writeFile(new URL('../data/preload_osm.json', import.meta.url), JSON.stringify({ ...json, center }));

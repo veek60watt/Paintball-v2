@@ -37,15 +37,19 @@ export default async (req: Request) => {
     `);out body;>;out skel qt;`;
   const body = "data=" + encodeURIComponent(query);
 
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), BUDGET_MS);
   const errors: string[] = [];
   let done = false;
+  const started = Date.now();
 
-  const attempt = async ([mirror, delay]: [string, number]): Promise<string> => {
+  // Each mirror gets its own controller so cancelling the losers never cuts off the winner's body.
+  // The winner's body is streamed straight through (never read here): reading multi-MB JSON in the
+  // edge runtime risks the 50 ms CPU limit, which showed up as empty 502s in the live smoke test.
+  const attempt = async ([mirror, delay]: [string, number]) => {
     const host = new URL(mirror).host;
     if (delay) await new Promise((r) => setTimeout(r, delay));
     if (done) throw new Error("skipped");
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), Math.max(1000, BUDGET_MS - (Date.now() - started)));
     try {
       const res = await fetch(mirror, {
         method: "POST",
@@ -57,34 +61,35 @@ export default async (req: Request) => {
         signal: ctrl.signal,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const text = await res.text();
-      if (!text.trimStart().startsWith("{")) throw new Error("non-JSON reply");
-      if (/"remark"\s*:/.test(text) && /"elements"\s*:\s*\[\s*\]/.test(text)) throw new Error("server overloaded");
-      return text;
+      if (!/json/i.test(res.headers.get("content-type") || "")) throw new Error("non-JSON reply");
+      clearTimeout(timer); // headers are in; let the body stream at its own pace
+      return { res, cancel: () => ctrl.abort() };
     } catch (err) {
+      clearTimeout(timer);
       const msg = (err as Error).name === "AbortError" ? "timeout" : (err as Error).message;
       if (msg !== "skipped") errors.push(`${host}: ${msg}`);
       throw err;
     }
   };
 
+  const pending = MIRRORS.map(attempt);
   try {
-    const text = await Promise.any(MIRRORS.map(attempt));
+    const { res } = await Promise.any(pending);
     done = true;
-    ctrl.abort();
-    return new Response(text, {
+    // cancel slower mirrors that already connected
+    pending.forEach((p) => p.then((w) => { if (w.res !== res) w.cancel(); }).catch(() => {}));
+    return new Response(res.body, {
       status: 200,
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "public, max-age=3600",
-        "Netlify-CDN-Cache-Control": "public, durable, s-maxage=604800, stale-while-revalidate=86400",
+        // 1 day: Overpass can return partial data; the browser rejects that, and a short TTL limits the damage.
+        "Netlify-CDN-Cache-Control": "public, durable, s-maxage=86400",
       },
     });
   } catch {
-    return reply({ error: "all map servers failed", details: errors }, 502);
-  } finally {
     done = true;
-    clearTimeout(timer);
+    return reply({ error: "all map servers failed", details: errors }, 502);
   }
 };
 

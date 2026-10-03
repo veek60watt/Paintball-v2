@@ -187,7 +187,8 @@ export async function loadWorld(center, CONFIG, onStatus, opts = {}) {
   const errors = []; // human-readable reasons, surfaced on the start screen if everything fails
   const usable = (json) => {
     if (!validElements(json)) throw new Error('bad response');
-    if (json.remark && !json.elements.length) throw new Error('server overloaded');
+    // Overpass signals timeouts/overload with a "remark"; the elements are then partial or empty.
+    if (json.remark) throw new Error('partial data (' + String(json.remark).slice(0, 60) + ')');
     return json;
   };
 

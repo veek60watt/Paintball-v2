@@ -94,6 +94,7 @@ await check('browser_default_mobile', async () => {
   await page.screenshot({ path: `${OUT}/mobile_play.png` });
   out.errors = errors;
   await ctx.close();
+  if (/Couldn't load/.test(out.status)) throw Object.assign(new Error('fell back to sample block: ' + out.status), out);
   return out;
 });
 

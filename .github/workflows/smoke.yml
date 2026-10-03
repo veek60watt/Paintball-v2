@@ -19,7 +19,7 @@ jobs:
           node-version: 20
       - name: Wait for Netlify to publish this commit
         if: github.event_name == 'push'
-        run: sleep 270
+        run: sleep 330
       - name: Install headless Chrome
         run: npm i --no-save playwright@1.47.2 && npx playwright install --with-deps chromium
       - name: Run smoke test against the live site
