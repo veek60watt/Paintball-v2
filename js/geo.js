@@ -5,11 +5,12 @@
 // No imports. Nothing here touches window/document/location at module top level.
 
 const M_PER_DEG = 111320;
+// Direct-from-browser fallbacks (normally the /api/osm proxy answers first).
+// maps.mail.ru is slow (~15 s) but the only consistently working public server as of Oct 2026.
 const OVERPASS_MIRRORS = [
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
   'https://overpass-api.de/api/interpreter',
-  'https://lz4.overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
-  'https://overpass.private.coffee/api/interpreter',
 ];
 
 // ---------------------------------------------------------------- fetch utils
@@ -222,8 +223,8 @@ export async function loadWorld(center, CONFIG, onStatus, opts = {}) {
     // 2) Our own Netlify proxy (server-side fetch + CDN cache). 404s harmlessly on static hosts.
     let proxyEmpty = false;
     try {
-      say('Downloading map data...');
-      const json = usable(await fetchJSON(`api/osm?s=${s}&w=${w}&n=${n}&e=${e}`, {}, 12000));
+      say('Downloading map data (can take ~15 s the first time)...');
+      const json = usable(await fetchJSON(`api/osm?s=${s}&w=${w}&n=${n}&e=${e}`, {}, 40000));
       say('Building the neighborhood...');
       const world = parseOSM(json, c, CONFIG);
       if (world.buildings.length > 0) { world.source = 'live'; return world; }
@@ -245,7 +246,7 @@ export async function loadWorld(center, CONFIG, onStatus, opts = {}) {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'data=' + encodeURIComponent(query),
           },
-          10000
+          i === 0 ? 30000 : 12000
         ));
         say('Building the neighborhood...');
         const world = parseOSM(json, c, CONFIG);

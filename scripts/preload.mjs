@@ -2,9 +2,12 @@
 // start screen loads instantly without any live map-server call. Never fails the build.
 import { readFile, writeFile } from 'node:fs/promises';
 
+// Order matters: as of Oct 2026 maps.mail.ru is the only public server reliably answering cloud IPs
+// (overpass-api.de returns 406; kumi/private.coffee often time out).
 const MIRRORS = [
-  'https://overpass-api.de/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass-api.de/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
 ];
 const R = 260; // meters; matches desktop CONFIG.radius_m (mobile uses a subset)
@@ -18,12 +21,12 @@ async function main() {
   const dLat = R / 111320, dLon = R / (111320 * Math.cos(center.lat * Math.PI / 180));
   const r4 = (x) => x.toFixed(4);
   const bb = `${r4(center.lat - dLat)},${r4(center.lon - dLon)},${r4(center.lat + dLat)},${r4(center.lon + dLon)}`;
-  const query = `[out:json][timeout:60];(way["building"](${bb});relation["building"](${bb});way["highway"](${bb});node["natural"="tree"](${bb}););out body;>;out skel qt;`;
+  const query = `[out:json][timeout:65];(way["building"](${bb});relation["building"](${bb});way["highway"](${bb});node["natural"="tree"](${bb}););out body;>;out skel qt;`;
 
   for (const mirror of MIRRORS) {
     try {
       const ac = new AbortController();
-      const t = setTimeout(() => ac.abort(), 45000);
+      const t = setTimeout(() => ac.abort(), 70000);
       const res = await fetch(mirror, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'Paperball-build/1.0 (+https://paintball-v2.netlify.app)' },
