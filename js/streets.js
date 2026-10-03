@@ -592,8 +592,9 @@ function rlenSimple(pts) {
 function buildTrees(group, pts, colliders) {
   const rnd = mulberry32(98765);
   const n = pts.length;
-  const trunkG = new THREE.CylinderGeometry(0.17, 0.24, 2.2, 7);
-  trunkG.translate(0, 1.1, 0);
+  // Canopy sits above head height (eye = 1.7 m) so walking past a tree never puts the camera in the leaves.
+  const trunkG = new THREE.CylinderGeometry(0.17, 0.24, 3.6, 7);
+  trunkG.translate(0, 1.8, 0);
   const trunkOutG = trunkG.clone();
   { const p = trunkOutG.attributes.position; for (let i = 0; i < p.count; i++) p.setXYZ(i, p.getX(i) * 1.4, p.getY(i) * 1.03 + (p.getY(i) < 1 ? -0.03 : 0.04), p.getZ(i) * 1.4); }
   const blobG = new THREE.IcosahedronGeometry(1, 0);
@@ -604,9 +605,9 @@ function buildTrees(group, pts, colliders) {
   const trunksO = new THREE.InstancedMesh(trunkOutG, outlineMat, n);
   const leafMat = toonMaterial(0xffffff);
   const blobDefs = [
-    { ox: 0, oy: 3.0, oz: 0, s: 1.5 },
-    { ox: 0.85, oy: 2.5, oz: 0.4, s: 1.05 },
-    { ox: -0.7, oy: 2.6, oz: -0.55, s: 1.15 },
+    { ox: 0, oy: 4.5, oz: 0, s: 1.5 },     // lowest blob edge ~2.5 m even at max tree scale
+    { ox: 0.85, oy: 3.95, oz: 0.4, s: 1.05 },
+    { ox: -0.7, oy: 4.05, oz: -0.55, s: 1.15 },
   ];
   const blobs = blobDefs.map(() => new THREE.InstancedMesh(blobG, leafMat, n));
   const blobsO = blobDefs.map(() => new THREE.InstancedMesh(blobOutG, outlineMat, n));
@@ -626,7 +627,7 @@ function buildTrees(group, pts, colliders) {
       blobs[k].setMatrixAt(i, m); blobsO[k].setMatrixAt(i, m);
       blobs[k].setColorAt(i, color);
     });
-    colliders.push({ type: 'cyl', cx: pts[i].x, cz: pts[i].z, r: 0.25, height: 2.5 });
+    colliders.push({ type: 'cyl', cx: pts[i].x, cz: pts[i].z, r: 0.25, height: 3.6 });
   }
   const all = [trunks, trunksO, ...blobs, ...blobsO];
   all.forEach((im) => { im.frustumCulled = false; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; group.add(im); });

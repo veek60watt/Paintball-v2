@@ -103,6 +103,7 @@ async function boot() {
     spawnPoint: streets.spawnPoint, CONFIG, isMobile: IS_MOBILE,
   });
 
+  window.__paperball = { game, camera, world }; // read-only hook for the automated smoke test
   preview.cx = streets.spawnPoint?.x ?? 0;
   preview.cz = streets.spawnPoint?.z ?? 0;
 

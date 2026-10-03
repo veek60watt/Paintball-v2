@@ -71,7 +71,32 @@ export function createGame({ THREE, scene, camera, renderer, worldData, collider
   player.collisionFilterGroup = G_PLAYER;
   player.collisionFilterMask = G_STATIC;
   player.allowSleep = false;
-  const sp = spawnPoint && isFinite(spawnPoint.x) && isFinite(spawnPoint.z) ? spawnPoint : { x: 0, z: 0, yaw: 0 };
+  // Spawn must be clear of every collision box, not just building footprints: a box that overhangs the
+  // sidewalk would otherwise push the player out through the ground (seen live at the White House).
+  const insideCollider = (x, z, m) => {
+    for (const c of colliders || []) {
+      if (c.type === 'obb') {
+        const dx = x - c.cx, dz = z - c.cz, ca = Math.cos(c.angle || 0), sa = Math.sin(c.angle || 0);
+        const lx = dx * ca - dz * sa, lz = dx * sa + dz * ca; // inverse of rotation.y = angle
+        if (Math.abs(lx) < c.hw + m && Math.abs(lz) < c.hd + m) return true;
+      } else if (c.type === 'cyl') {
+        if (Math.hypot(x - c.cx, z - c.cz) < c.r + m) return true;
+      }
+    }
+    return false;
+  };
+  const sp0 = spawnPoint && isFinite(spawnPoint.x) && isFinite(spawnPoint.z) ? spawnPoint : { x: 0, z: 0, yaw: 0 };
+  const sp = (() => {
+    const m = R + 0.4;
+    if (!insideCollider(sp0.x, sp0.z, m)) return sp0;
+    for (let r = 2; r <= 90; r += 2) {
+      for (let k = 0; k < 24; k++) {
+        const a = (k / 24) * Math.PI * 2, x = sp0.x + Math.cos(a) * r, z = sp0.z + Math.sin(a) * r;
+        if (!insideCollider(x, z, m)) return { x, z, yaw: sp0.yaw || 0 };
+      }
+    }
+    return sp0;
+  })();
   player.position.set(sp.x, R + 0.02, sp.z);
   world.addBody(player); bodyCount++;
   let yaw = sp.yaw || 0, pitch = 0;
@@ -650,7 +675,9 @@ export function createGame({ THREE, scene, camera, renderer, worldData, collider
     if (player.position.x > bnd.maxX + m) { player.position.x = bnd.maxX + m; player.velocity.x = Math.min(0, player.velocity.x); }
     if (player.position.z < bnd.minZ - m) { player.position.z = bnd.minZ - m; player.velocity.z = Math.max(0, player.velocity.z); }
     if (player.position.z > bnd.maxZ + m) { player.position.z = bnd.maxZ + m; player.velocity.z = Math.min(0, player.velocity.z); }
-    if (player.position.y < -5) { player.position.set(sp.x, R + 0.05, sp.z); player.velocity.set(0, 0, 0); }
+    // Safety net: anything that throws the player out of the playable volume returns them to the (clear) spawn.
+    const pp = player.position;
+    if (!(pp.y > -2 && pp.y < 80 && isFinite(pp.x) && isFinite(pp.z))) { pp.set(sp.x, R + 0.05, sp.z); player.velocity.set(0, 0, 0); }
   }
 
   function updateTargets(dt) {

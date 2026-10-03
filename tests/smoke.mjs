@@ -70,6 +70,12 @@ async function openGame(ctxOpts, url) {
   await page.waitForFunction(() => !document.getElementById('start-btn').disabled, null, { timeout: 120000 });
   return { ctx, page, errors, requests };
 }
+const camState = (page) => page.evaluate(() => {
+  const pb = window.__paperball; if (!pb) return null;
+  const c = pb.camera.position, p = pb.game._debug && pb.game._debug.player.position;
+  return { camY: +c.y.toFixed(2), player: p ? [+p.x.toFixed(1), +p.y.toFixed(2), +p.z.toFixed(1)] : null };
+});
+const assertCam = (out) => { if (!out.cam || !(out.cam.camY > 1.2 && out.cam.camY < 3.5)) throw Object.assign(new Error('camera out of range: ' + JSON.stringify(out.cam)), out); };
 const statusOf = async (page) => (await page.textContent('#loading-msg')).replace(/\s+/g, ' ').trim();
 const fields = async (page) => [await page.inputValue('#street-input'), await page.inputValue('#city-input'), await page.inputValue('#state-input')];
 
@@ -82,10 +88,12 @@ await check('browser_default_desktop', async () => {
   await page.keyboard.down('KeyW'); await page.waitForTimeout(1500); await page.keyboard.up('KeyW');
   await page.waitForTimeout(500);
   out.hud_label = await page.textContent('#location-label');
+  out.cam = await camState(page);
   await page.screenshot({ path: `${OUT}/default_play.png` });
   out.errors = errors;
   await ctx.close();
   if (/Couldn't load/.test(out.status)) throw Object.assign(new Error('fell back to sample block: ' + out.status), out);
+  assertCam(out);
   return out;
 });
 
@@ -95,10 +103,12 @@ await check('browser_default_mobile', async () => {
   await page.screenshot({ path: `${OUT}/mobile_start.png` });
   await page.tap('#start-btn');
   await page.waitForTimeout(2000);
+  out.cam = await camState(page);
   await page.screenshot({ path: `${OUT}/mobile_play.png` });
   out.errors = errors;
   await ctx.close();
   if (/Couldn't load/.test(out.status)) throw Object.assign(new Error('fell back to sample block: ' + out.status), out);
+  assertCam(out);
   return out;
 });
 
@@ -114,10 +124,12 @@ await check('browser_search_white_house', async () => {
   await page.screenshot({ path: `${OUT}/search_start.png` });
   await page.click('#start-btn');
   await page.waitForTimeout(2500);
+  out.cam = await camState(page);
   await page.screenshot({ path: `${OUT}/search_play.png` });
   out.errors = errors;
   await ctx.close();
   if (/Couldn't (load|find)/.test(out.status)) throw Object.assign(new Error(out.status), out);
+  assertCam(out);
   return out;
 });
 
