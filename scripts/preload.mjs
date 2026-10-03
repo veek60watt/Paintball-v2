@@ -22,12 +22,15 @@ async function main() {
   const dLat = R / 111320, dLon = R / (111320 * Math.cos(center.lat * Math.PI / 180));
   const r4 = (x) => x.toFixed(4);
   const bb = `${r4(center.lat - dLat)},${r4(center.lon - dLon)},${r4(center.lat + dLat)},${r4(center.lon + dLon)}`;
-  const query = `[out:json][timeout:65];(way["building"](${bb});relation["building"](${bb});way["highway"](${bb});node["natural"="tree"](${bb}););out body;>;out skel qt;`;
+  const query = `[out:json][timeout:25];(way["building"](${bb});relation["building"](${bb});way["highway"](${bb});node["natural"="tree"](${bb}););out body;>;out skel qt;`;
 
-  for (const mirror of MIRRORS) {
+  const plan = [MIRRORS[0], MIRRORS[0], MIRRORS[0], ...MIRRORS.slice(1)]; // mail.ru is slow but answers: retry it
+  for (let attemptNo = 0; attemptNo < plan.length; attemptNo++) {
+    const mirror = plan[attemptNo];
+    if (attemptNo > 0 && attemptNo < 3) await new Promise((r) => setTimeout(r, 20000 * attemptNo));
     try {
       const ac = new AbortController();
-      const t = setTimeout(() => ac.abort(), 70000);
+      const t = setTimeout(() => ac.abort(), 60000);
       const res = await fetch(mirror, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'Paperball-build/1.0 (+https://paintball-v2.netlify.app)' },
@@ -45,7 +48,7 @@ async function main() {
       console.log(`[preload] ${center.label}: ${els.length} elements, ${buildings} buildings from ${new URL(mirror).host}`);
       return;
     } catch (err) {
-      console.log(`[preload] ${new URL(mirror).host} failed: ${err.message}`);
+      console.log(`[preload] attempt ${attemptNo + 1} ${new URL(mirror).host} failed: ${err.message}`);
     }
   }
   console.log('[preload] all mirrors failed; site will fetch the default map live instead');
