@@ -1,0 +1,196 @@
+{
+  "base": "https://paintball-v2.netlify.app/",
+  "commit": "f661c8123ab2a92a31b2afcb61dacae5ae7d1ad9",
+  "at": "2026-10-03T13:44:28.638Z",
+  "checks": {
+    "preload_file": {
+      "ok": true,
+      "center": {
+        "lat": 37.80207,
+        "lon": -122.41874,
+        "label": "Lombard Street, San Francisco, CA"
+      },
+      "elements": 7250,
+      "buildings": 476,
+      "named_streets": [
+        "Lurmont Terrace",
+        "Francisco Street",
+        "Havens Street",
+        "Montclair Terrace",
+        "Houston Street",
+        "Black Place",
+        "Valparaiso Street",
+        "Larkin Street",
+        "Bret Harte Terrace",
+        "Southard Place",
+        "Attridge Alley",
+        "Lombard Street"
+      ],
+      "ms": 719
+    },
+    "proxy_enid_downtown_first": {
+      "ok": true,
+      "status": 200,
+      "cache_status": "\"Netlify Edge\"; fwd=miss; fwd-status=200; stored",
+      "age": "14",
+      "elements": 756,
+      "buildings": 36,
+      "named_streets": [
+        "North Independence Avenue",
+        "South 2nd Street",
+        "East Cherokee Avenue",
+        "West Maine Street",
+        "North 2nd Street",
+        "East Randolph Avenue",
+        "North Grand Avenue",
+        "South Grand Avenue",
+        "South Independence Avenue",
+        "East Broadway Avenue",
+        "Railroad Avenue",
+        "West Cherokee Avenue"
+      ],
+      "ms": 14286
+    },
+    "proxy_enid_downtown_repeat": {
+      "ok": true,
+      "status": 200,
+      "cache_status": "\"Netlify Edge\"; hit; ttl=86400",
+      "age": "14",
+      "elements": 756,
+      "buildings": 36,
+      "named_streets": [
+        "North Independence Avenue",
+        "South 2nd Street",
+        "East Cherokee Avenue",
+        "West Maine Street",
+        "North 2nd Street",
+        "East Randolph Avenue",
+        "North Grand Avenue",
+        "South Grand Avenue",
+        "South Independence Avenue",
+        "East Broadway Avenue",
+        "Railroad Avenue",
+        "West Cherokee Avenue"
+      ],
+      "ms": 41
+    },
+    "proxy_white_house_first": {
+      "ok": true,
+      "status": 200,
+      "cache_status": "\"Netlify Edge\"; fwd=miss; fwd-status=200; stored",
+      "age": "28",
+      "elements": 3226,
+      "buildings": 98,
+      "named_streets": [
+        "Jackson Place Northwest",
+        "Madison Place Northwest",
+        "State Place Northwest",
+        "Alexander Hamilton Place Northwest",
+        "East Executive Avenue Northwest",
+        "New York Avenue Northwest",
+        "South Drive",
+        "15th Street Northwest",
+        "West Executive Avenue Northwest",
+        "Pennsylvania Avenue Northwest",
+        "North Drive",
+        "F Street Northwest"
+      ],
+      "ms": 14187
+    },
+    "proxy_white_house_repeat": {
+      "ok": true,
+      "status": 200,
+      "cache_status": "\"Netlify Edge\"; hit; ttl=86400",
+      "age": "14",
+      "elements": 3226,
+      "buildings": 98,
+      "named_streets": [
+        "Jackson Place Northwest",
+        "Madison Place Northwest",
+        "State Place Northwest",
+        "Alexander Hamilton Place Northwest",
+        "East Executive Avenue Northwest",
+        "New York Avenue Northwest",
+        "South Drive",
+        "15th Street Northwest",
+        "West Executive Avenue Northwest",
+        "Pennsylvania Avenue Northwest",
+        "North Drive",
+        "F Street Northwest"
+      ],
+      "ms": 48
+    },
+    "geocode_white_house": {
+      "ok": true,
+      "results": [
+        {
+          "house": "1600",
+          "road": "Pennsylvania Avenue Northwest",
+          "state": "District of Columbia",
+          "lat": "38.8976387",
+          "lon": "-77.0365525"
+        }
+      ],
+      "ms": 613
+    },
+    "browser_default_desktop": {
+      "ok": true,
+      "status": "450 houses · 30 street signs · Lombard Street, San Francisco, CA",
+      "fields": [
+        "1000 Lombard Street",
+        "San Francisco",
+        "CA"
+      ],
+      "requests": [
+        "https://paintball-v2.netlify.app/data/preload_osm.json"
+      ],
+      "hud_label": "Lombard Street, San Francisco, CA",
+      "cam": {
+        "camY": 1.69,
+        "pitchDeg": 0,
+        "player": [
+          -1.1,
+          0.34,
+          1
+        ]
+      },
+      "errors": [],
+      "ms": 41196
+    },
+    "browser_default_mobile": {
+      "ok": true,
+      "status": "180 houses · 17 street signs · Lombard Street, San Francisco, CA",
+      "cam": {
+        "camY": 1.7,
+        "pitchDeg": 0,
+        "player": [
+          -1.1,
+          0.35,
+          1
+        ]
+      },
+      "errors": [],
+      "ms": 16885
+    },
+    "browser_search_white_house": {
+      "ok": true,
+      "url_params": "lat=38.897639&lon=-77.036552&label=Pennsylvania+Avenue+Northwest,+Washington,+DC&prec=house&s=1600+Pennsylvania+Avenue+NW&c=Washington&st=DC",
+      "status": "93 houses · 28 street signs · Pennsylvania Avenue Northwest, Washington, DC",
+      "requests": [
+        "https://nominatim.openstreetmap.org/search",
+        "https://paintball-v2.netlify.app/api/osm"
+      ],
+      "cam": {
+        "camY": 1.69,
+        "pitchDeg": 0,
+        "player": [
+          -0.6,
+          0.34,
+          -118.6
+        ]
+      },
+      "errors": [],
+      "ms": 43387
+    }
+  }
+}
