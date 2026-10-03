@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node scripts/preload.mjs
+      - run: node scripts/preload.mjs 2>&1 | tee preload.log
       - name: Commit if changed (push triggers a Netlify deploy)
         run: |
           test -f data/preload_osm.json || { echo "no preload produced"; exit 0; }
@@ -30,3 +30,11 @@ jobs:
           git diff --cached --quiet && { echo "unchanged"; exit 0; }
           git commit -qm "Refresh preloaded default map [skip smoke]"
           git push
+      - name: Publish log to preload-log branch
+        if: always()
+        run: |
+          mkdir -p /tmp/log && cp preload.log /tmp/log/ 2>/dev/null || echo "no log" > /tmp/log/preload.log
+          ls -la data/ >> /tmp/log/preload.log; cd /tmp/log
+          git init -q -b preload-log; git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add -A; git commit -qm "preload log ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" preload-log

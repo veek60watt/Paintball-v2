@@ -1,17 +1,18 @@
 // Paperball map proxy (Netlify Edge Function): GET /api/osm?s=&w=&n=&e=  (bbox in degrees)
-// Edge functions may wait up to 40 s for a response, which matters: as of Oct 2026 the only
-// reliably-answering public Overpass server (maps.mail.ru) takes ~15 s, overpass-api.de returns
+// As of Oct 2026 the only reliably-answering public Overpass server (maps.mail.ru) takes 10-25 s, overpass-api.de returns
 // 406 to cloud IPs, and several mirrors time out. Results are cached on Netlify's CDN for a week.
 
 export default async (req: Request) => {
   const MIRRORS: Array<[string, number]> = [
     // [url, start delay ms] - staggered so slow mirrors get a head start without hammering all at once
     ["https://maps.mail.ru/osm/tools/overpass/api/interpreter", 0],
-    ["https://overpass.kumi.systems/api/interpreter", 8000],
-    ["https://overpass-api.de/api/interpreter", 8000],
-    ["https://overpass.private.coffee/api/interpreter", 16000],
+    ["https://overpass.kumi.systems/api/interpreter", 5000],
+    ["https://overpass-api.de/api/interpreter", 5000],
+    ["https://overpass.private.coffee/api/interpreter", 9000],
   ];
-  const BUDGET_MS = 36000; // under the 40 s response-header limit
+  // Live tests showed edge invocations cut off at ~26 s (not the documented 40 s). Stay well under;
+  // if every mirror is slower, the browser falls back to calling maps.mail.ru directly.
+  const BUDGET_MS = 22000;
 
   const reply = (obj: unknown, status: number) =>
     new Response(JSON.stringify(obj), {
@@ -85,6 +86,8 @@ export default async (req: Request) => {
         "Cache-Control": "public, max-age=3600",
         // 1 day: Overpass can return partial data; the browser rejects that, and a short TTL limits the damage.
         "Netlify-CDN-Cache-Control": "public, durable, s-maxage=86400",
+        // Without this the CDN cache key ignores the query string and every bbox gets the first map cached.
+        "Netlify-Vary": "query",
       },
     });
   } catch {

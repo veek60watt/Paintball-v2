@@ -27,11 +27,13 @@ await check('preload_file', async () => {
   const r = await fetch(BASE + 'data/preload_osm.json');
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const j = await r.json();
-  return { center: j.center, ...osmStats(j) };
+  const st = osmStats(j);
+  if (!st.named_streets.some((n) => /Lombard/.test(n))) throw new Error('preload is not Lombard Street: ' + st.named_streets.slice(0, 4).join(', '));
+  return { center: j.center, ...st };
 });
-for (const [name, bbox] of [
-  ['proxy_enid_downtown', 's=36.3933&w=-97.8813&n=36.3979&e=-97.8755'],
-  ['proxy_white_house', 's=38.8955&w=-77.0395&n=38.8999&e=-77.0335'],
+for (const [name, bbox, expectStreet] of [
+  ['proxy_enid_downtown', 's=36.3933&w=-97.8813&n=36.3979&e=-97.8755', /Independence|Grand/],
+  ['proxy_white_house', 's=38.8955&w=-77.0395&n=38.8999&e=-77.0335', /Pennsylvania|Executive/],
 ]) {
   for (const pass of ['first', 'repeat']) {
     await check(`${name}_${pass}`, async () => {
@@ -39,7 +41,9 @@ for (const [name, bbox] of [
       const text = await r.text();
       const hdr = { status: r.status, cache_status: r.headers.get('cache-status'), age: r.headers.get('age') };
       if (!r.ok) throw new Error(`HTTP ${r.status}: ${text.slice(0, 300)}`);
-      return { ...hdr, ...osmStats(JSON.parse(text)) };
+      const st = osmStats(JSON.parse(text));
+      if (!st.named_streets.some((n) => expectStreet.test(n))) throw Object.assign(new Error('WRONG MAP for this location: ' + st.named_streets.slice(0, 4).join(', ')), hdr);
+      return { ...hdr, ...st };
     });
   }
 }
