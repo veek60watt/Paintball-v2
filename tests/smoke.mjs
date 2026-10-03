@@ -73,9 +73,10 @@ async function openGame(ctxOpts, url) {
 const camState = (page) => page.evaluate(() => {
   const pb = window.__paperball; if (!pb) return null;
   const c = pb.camera.position, p = pb.game._debug && pb.game._debug.player.position;
-  return { camY: +c.y.toFixed(2), player: p ? [+p.x.toFixed(1), +p.y.toFixed(2), +p.z.toFixed(1)] : null };
+  const look = pb.game._debug && pb.game._debug.look;
+  return { camY: +c.y.toFixed(2), pitchDeg: look ? +(look.pitch * 57.2958).toFixed(1) : null, player: p ? [+p.x.toFixed(1), +p.y.toFixed(2), +p.z.toFixed(1)] : null };
 });
-const assertCam = (out) => { if (!out.cam || !(out.cam.camY > 1.2 && out.cam.camY < 3.5)) throw Object.assign(new Error('camera out of range: ' + JSON.stringify(out.cam)), out); };
+const assertCam = (out) => { const c = out.cam; if (!c || !(c.camY > 1.2 && c.camY < 3.5) || !(Math.abs(c.pitchDeg) < 30)) throw Object.assign(new Error('camera out of range: ' + JSON.stringify(c)), out); };
 const statusOf = async (page) => (await page.textContent('#loading-msg')).replace(/\s+/g, ' ').trim();
 const fields = async (page) => [await page.inputValue('#street-input'), await page.inputValue('#city-input'), await page.inputValue('#state-input')];
 

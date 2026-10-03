@@ -124,8 +124,15 @@ export function createGame({ THREE, scene, camera, renderer, worldData, collider
 
   function setupDesktop() {
     on(canvas, 'click', () => { if (running && !won && document.pointerLockElement !== canvas) { try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (_) {} } });
+    // Chrome often fires a mousemove with a huge bogus movementX/Y right after pointer lock is granted,
+    // which snapped the view straight up (seen in live desktop screenshots). Ignore input briefly after
+    // locking, and drop single events that are physically implausible.
+    let lockedAt = 0;
+    on(document, 'pointerlockchange', () => { if (document.pointerLockElement === canvas) lockedAt = performance.now(); });
     on(document, 'mousemove', (e) => {
       if (document.pointerLockElement !== canvas) return;
+      if (performance.now() - lockedAt < 150) return;
+      if (Math.abs(e.movementX) > 250 || Math.abs(e.movementY) > 250) return;
       yaw -= e.movementX * CONFIG.mouse_sensitivity;
       pitch -= e.movementY * CONFIG.mouse_sensitivity;
       pitch = Math.max(-PITCH, Math.min(PITCH, pitch));
@@ -786,6 +793,6 @@ export function createGame({ THREE, scene, camera, renderer, worldData, collider
   return {
     start, update, dispose,
     // test/debug hooks (not part of the contract)
-    _debug: { targets, stats, balls, player, world, fire, setLook(y, p) { yaw = y; pitch = p; }, get bodyCount() { return bodyCount; } },
+    _debug: { targets, stats, balls, player, world, fire, setLook(y, p) { yaw = y; pitch = p; }, get look() { return { yaw, pitch }; }, get bodyCount() { return bodyCount; } },
   };
 }
