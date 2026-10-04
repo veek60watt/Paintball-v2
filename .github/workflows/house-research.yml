@@ -1,0 +1,32 @@
+name: House research (encrypted)
+on:
+  push:
+    branches: [house-research]
+permissions:
+  contents: write
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install duckdb==1.1.3 >/dev/null
+      - name: Fetch
+        run: python3 research/stage.py
+      - name: Encrypt (only the session holding the private key can read out/)
+        if: always()
+        run: |
+          mkdir -p pub_out && cp -r public/. pub_out/ 2>/dev/null || true
+          tar czf payload.tgz -C out . 2>/dev/null || tar czf payload.tgz --files-from /dev/null
+          openssl rand -hex 32 > k.txt
+          openssl enc -aes-256-cbc -md sha256 -pbkdf2 -iter 100000 -salt -in payload.tgz -out pub_out/payload.enc -pass file:k.txt
+          openssl pkeyutl -encrypt -pubin -inkey research/pub.pem -pkeyopt rsa_padding_mode:oaep -in k.txt -out pub_out/key.enc
+          rm -f k.txt payload.tgz
+          ls -la pub_out
+      - name: Publish ciphertext
+        if: always()
+        run: |
+          cd pub_out
+          git init -q -b house-research-results; git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add -A; git commit -qm "research ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" house-research-results
