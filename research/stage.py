@@ -70,16 +70,22 @@ def overture_release():
     pre, _ = s3_prefixes('overturemaps-us-west-2', 'release/')
     L('overture releases (last 3):', pre[-3:]); return pre[-1].rstrip('/').split('/')[-1] if pre else None
 
-if CFG['stage'] == 1:
+def stage1():
     S, W, N, E = CFG['city_bbox']
     addrs, streets = {}, {}
-    for (s, w, n, e) in quads(S, W, N, E, 2):
+    for qi, (s, w, n, e) in enumerate(quads(S, W, N, E, 3)):
         bb = f'{s:.4f},{w:.4f},{n:.4f},{e:.4f}'
-        j = overpass(f'[out:json][timeout:25];(nwr["addr:housenumber"]({bb}););out center tags;')
+        try:
+            j = overpass(f'[out:json][timeout:25];(nwr["addr:housenumber"]({bb}););out center tags;')
+        except Exception as ex:
+            L(f'quad {qi} addresses failed'); j = {'elements': []}
         for el in j['elements']:
             t = el.get('tags', {}); c = el.get('center') or {'lat': el.get('lat'), 'lon': el.get('lon')}
             addrs[f"{el['type']}/{el['id']}"] = {'lat': c['lat'], 'lon': c['lon'], 'num': t.get('addr:housenumber'), 'street': t.get('addr:street'), 'building': t.get('building')}
-        j = overpass(f'[out:json][timeout:25];way["highway"]["name"]({bb});out geom;')
+        try:
+            j = overpass(f'[out:json][timeout:25];way["highway"]["name"]({bb});out geom;')
+        except Exception as ex:
+            L(f'quad {qi} streets failed'); j = {'elements': []}
         for el in j['elements']:
             streets[el['id']] = {'name': el['tags'].get('name'), 'hw': el['tags'].get('highway'), 'g': [[p['lat'], p['lon']] for p in el.get('geometry', [])]}
     json.dump(list(addrs.values()), open(OUT / 'addresses.json', 'w'))
@@ -98,7 +104,7 @@ if CFG['stage'] == 1:
             if kname.endswith('buildings.pmtiles'):
                 probe('pmtiles range', f'https://overturemaps-tiles-us-west-2-beta.s3.amazonaws.com/{kname}', headers={'Range': 'bytes=0-16383'})
 
-if CFG['stage'] == 2:
+def stage2():
     s, w, n, e = CFG['bbox']; z = CFG.get('zoom', 18)
     bb = f'{s:.5f},{w:.5f},{n:.5f},{e:.5f}'
     q = f'[out:json][timeout:25];(way["building"]({bb});relation["building"]({bb});way["highway"]({bb});node["natural"="tree"]({bb}););out body;>;out skel qt;'
@@ -148,4 +154,10 @@ if CFG['stage'] == 2:
             from collections import Counter
             L(f'overture buildings={len(feats)} in {time.time()-t0:.0f}s sources={dict(Counter(f["properties"]["src"] for f in feats))}')
 
-(PUB / 'log.txt').write_text('\n'.join(log))
+import traceback
+try:
+    stage1() if CFG['stage'] == 1 else stage2()
+except Exception:
+    L('CRASH', traceback.format_exc()[-1500:])
+finally:
+    (PUB / 'log.txt').write_text('\n'.join(log))
