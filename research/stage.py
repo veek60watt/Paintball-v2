@@ -131,8 +131,29 @@ def stage2():
             except Exception:
                 time.sleep(2)
         return 0
+    jobs = [j for j in jobs if j[0] == 'esri']   # USGS tiles 404 at z18 (stage 1 probe)
     with ThreadPoolExecutor(8) as ex: ok = sum(ex.map(get, jobs))
-    L(f'tiles ok {ok}/{len(jobs)} zoom {z}')
+    L(f'esri tiles ok {ok}/{len(jobs)} zoom {z}')
+    # USGS tile zoom levels that exist
+    cx, cy = tile_xy((s + n) / 2, (w + e) / 2, 16)
+    for zz in (15, 16, 17, 18):
+        f = 2 ** (zz - 16); probe(f'usgs tile z{zz}', TILES['usgs'].format(z=zz, x=int(cx * f), y=int(cy * f)))
+    # Public-domain NAIP via ImageServer export: ONE request, lat/lon-linear output (maps linearly onto game x/z)
+    lat0 = (s + n) / 2
+    W_px = 4096; H_px = int(round(W_px * (n - s) / ((e - w) * math.cos(math.radians(lat0)))))
+    naip = f'https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/exportImage?bbox={w},{s},{e},{n}&bboxSR=4326&imageSR=4326&size={W_px},{H_px}&format=jpg&f=image'
+    t0 = time.time(); b = probe('naip export 2.4km', naip)
+    if b: (OUT / 'naip.jpg').write_bytes(b); L(f'naip {len(b)//1024} KB in {time.time()-t0:.1f}s size {W_px}x{H_px}')
+    # game-sized request timing/CORS (520 m box at ~0.5 m/px), center of this box
+    gs, gw = lat0 - 260/111320, (w + e) / 2 - 260/(111320*math.cos(math.radians(lat0)))
+    gn, ge = lat0 + 260/111320, (w + e) / 2 + 260/(111320*math.cos(math.radians(lat0)))
+    t0 = time.time(); b = probe('naip export game-size', f'https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/exportImage?bbox={gw},{gs},{ge},{gn}&bboxSR=4326&imageSR=4326&size=1024,1024&format=jpg&f=image')
+    if b: L(f'naip game-size {len(b)//1024} KB in {time.time()-t0:.1f}s')
+    b = probe('naip service info', 'https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer?f=json')
+    if b:
+        try:
+            info = json.loads(b); L('naip info:', {k: info.get(k) for k in ('maxImageWidth', 'maxImageHeight', 'pixelSizeX', 'copyrightText', 'description')})
+        except Exception as ex: L('naip info parse fail', ex)
     rel = overture_release()
     if rel:
         con = duck()
