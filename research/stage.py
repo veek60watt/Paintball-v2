@@ -13,6 +13,7 @@ MIRRORS = ['https://maps.mail.ru/osm/tools/overpass/api/interpreter',
 log = []
 def L(*a):
     s = ' '.join(str(x) for x in a); print(s, flush=True); log.append(s)
+    with open(PUB / 'log.txt', 'a') as f: f.write(s + '\n')   # incremental: survives a killed job
 
 def http(url, data=None, headers=None, timeout=60, method=None):
     h = {'User-Agent': UA}; h.update(headers or {})
@@ -70,27 +71,25 @@ def overture_release():
     pre, _ = s3_prefixes('overturemaps-us-west-2', 'release/')
     L('overture releases (last 3):', pre[-3:]); return pre[-1].rstrip('/').split('/')[-1] if pre else None
 
+def duck():
+    import duckdb
+    con = duckdb.connect()
+    for stmt in ["INSTALL spatial", "LOAD spatial", "INSTALL httpfs", "LOAD httpfs", "SET s3_region='us-west-2'"]: con.execute(stmt)
+    return con
+
 def stage1():
     S, W, N, E = CFG['city_bbox']
-    addrs, streets = {}, {}
-    for qi, (s, w, n, e) in enumerate(quads(S, W, N, E, 3)):
-        bb = f'{s:.4f},{w:.4f},{n:.4f},{e:.4f}'
-        try:
-            j = overpass(f'[out:json][timeout:25];(nwr["addr:housenumber"]({bb}););out center tags;')
-        except Exception as ex:
-            L(f'quad {qi} addresses failed'); j = {'elements': []}
-        for el in j['elements']:
-            t = el.get('tags', {}); c = el.get('center') or {'lat': el.get('lat'), 'lon': el.get('lon')}
-            addrs[f"{el['type']}/{el['id']}"] = {'lat': c['lat'], 'lon': c['lon'], 'num': t.get('addr:housenumber'), 'street': t.get('addr:street'), 'building': t.get('building')}
-        try:
-            j = overpass(f'[out:json][timeout:25];way["highway"]["name"]({bb});out geom;')
-        except Exception as ex:
-            L(f'quad {qi} streets failed'); j = {'elements': []}
-        for el in j['elements']:
-            streets[el['id']] = {'name': el['tags'].get('name'), 'hw': el['tags'].get('highway'), 'g': [[p['lat'], p['lon']] for p in el.get('geometry', [])]}
-    json.dump(list(addrs.values()), open(OUT / 'addresses.json', 'w'))
-    json.dump(list(streets.values()), open(OUT / 'streets.json', 'w'))
-    L(f'addresses={len(addrs)} named_street_ways={len(streets)}')
+    rel = overture_release()
+    con = duck()
+    where = f'bbox.xmin > {W} AND bbox.xmax < {E} AND bbox.ymin > {S} AND bbox.ymax < {N}'
+    t0 = time.time()
+    rows = con.execute(f"SELECT number, street, unit, ST_Y(geometry) AS lat, ST_X(geometry) AS lon FROM read_parquet('s3://overturemaps-us-west-2/release/{rel}/theme=addresses/type=address/*', hive_partitioning=1) WHERE {where}").fetchall()
+    json.dump([{'num': r[0], 'street': r[1], 'unit': r[2], 'lat': r[3], 'lon': r[4]} for r in rows], open(OUT / 'addresses.json', 'w'))
+    L(f'overture addresses={len(rows)} in {time.time()-t0:.0f}s')
+    t0 = time.time()
+    rows = con.execute(f"SELECT names.primary AS name, class, ST_AsGeoJSON(geometry) AS g FROM read_parquet('s3://overturemaps-us-west-2/release/{rel}/theme=transportation/type=segment/*', hive_partitioning=1) WHERE {where} AND names.primary IS NOT NULL").fetchall()
+    json.dump([{'name': r[0], 'cls': r[1], 'g': json.loads(r[2])['coordinates']} for r in rows], open(OUT / 'streets.json', 'w'))
+    L(f'overture named segments={len(rows)} in {time.time()-t0:.0f}s')
     # --- non-sensitive probes for the style/data decision ---
     x, y = tile_xy(36.3956, -97.8784, 18)
     for k, u in TILES.items(): probe(f'tile {k}', u.format(z=18, x=int(x), y=int(y)))
@@ -136,9 +135,7 @@ def stage2():
     L(f'tiles ok {ok}/{len(jobs)} zoom {z}')
     rel = overture_release()
     if rel:
-        import duckdb
-        con = duckdb.connect()
-        for stmt in ["INSTALL spatial", "LOAD spatial", "INSTALL httpfs", "LOAD httpfs", "SET s3_region='us-west-2'"]: con.execute(stmt)
+        con = duck()
         path = f's3://overturemaps-us-west-2/release/{rel}/theme=buildings/type=building/*'
         where = f'bbox.xmin > {w} AND bbox.xmax < {e} AND bbox.ymin > {s} AND bbox.ymax < {n}'
         t0 = time.time(); rows = None
@@ -160,4 +157,4 @@ try:
 except Exception:
     L('CRASH', traceback.format_exc()[-1500:])
 finally:
-    (PUB / 'log.txt').write_text('\n'.join(log))
+    L('done')
