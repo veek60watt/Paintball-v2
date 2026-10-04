@@ -1,0 +1,21 @@
+overpass fail maps.mail.ru try 1 1.1s HTTP Error 504: Gateway Time-out
+overpass fail maps.mail.ru try 2 1.1s HTTP Error 504: Gateway Time-out
+overpass fail maps.mail.ru try 3 0.9s HTTP Error 504: Gateway Time-out
+overpass fail maps.mail.ru try 4 1.0s HTTP Error 504: Gateway Time-out
+overpass fail overpass.kumi.systems try 5 90.4s The read operation timed out
+overpass ok overpass.private.coffee 79.2s 5376 elements
+esri tiles ok 441/441 zoom 18
+PROBE usgs tile z15: HTTP 200 {'content-type': 'image/jpeg', 'access-control-allow-origin': '*', 'accept-ranges': None, 'content-length': '36474', 'content-range': None, 'last-modified': None} bytes=36474
+PROBE usgs tile z16: HTTP 200 {'content-type': 'image/jpeg', 'access-control-allow-origin': '*', 'accept-ranges': None, 'content-length': '34092', 'content-range': None, 'last-modified': None} bytes=34092
+PROBE usgs tile z17: FAIL HTTP Error 404: Not Found
+PROBE usgs tile z18: FAIL HTTP Error 404: Not Found
+PROBE naip export 2.4km: HTTP 200 {'content-type': 'image/jpeg', 'access-control-allow-origin': '*', 'accept-ranges': None, 'content-length': '156', 'content-range': None, 'last-modified': None} bytes=156
+naip 0 KB in 0.3s size 4096x4095
+PROBE naip export game-size: HTTP 200 {'content-type': 'image/jpeg', 'access-control-allow-origin': '*', 'accept-ranges': None, 'content-length': '223001', 'content-range': None, 'last-modified': None} bytes=223001
+naip game-size 217 KB in 4.2s
+PROBE naip service info: HTTP 200 {'content-type': 'application/json;charset=UTF-8', 'access-control-allow-origin': '*', 'accept-ranges': None, 'content-length': None, 'content-range': None, 'last-modified': None} bytes=7184
+naip info: {'maxImageWidth': 4000, 'maxImageHeight': 4000, 'pixelSizeX': 0.29999999999944177, 'copyrightText': 'USGS, USDA, The National Map: Orthoimagery. January 09, 2025.', 'description': "The USGS NAIP Imagery service from The National Map (TNM) consists of high resolution aerial images that combine the visual attributes of an aerial photograph with the spatial accuracy and reliability of a map. The USGS NAIP Imagery service is a mosaic primarily of 0.6 meter resolution 4-band imagery presented in natural color. This service also supports the use of templates that can be used to dynamically generate 'false color', also known as color-infrared (CIR), and Normalized Difference Vegetation Index (NDVI) views of the data. USGS relies on a partnership with the U.S. Department of Agriculture’s Farm Service Agency for NAIP data. The National Map Downloader application allows free downloads of public domain, NAIP compressed orthoimagery in JPEG 2000 (.jp2) format for the conterminous United States."}
+PROBE s3 list overturemaps-us-west-2/release/: HTTP 200 {'content-type': 'application/xml', 'access-control-allow-origin': '*', 'accept-ranges': None, 'content-length': None, 'content-range': None, 'last-modified': None} bytes=498
+overture releases (last 3): ['release/2026-08-19.0/', 'release/2026-09-23.0/', 'release/2026-09-23.1/']
+overture buildings=1718 in 116s sources={'Microsoft ML Buildings': 1535, 'OpenStreetMap': 183}
+done
