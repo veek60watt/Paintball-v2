@@ -1,0 +1,6 @@
+[preload] Lombard Street, San Francisco, CA: 7250 elements, 476 buildings from maps.mail.ru
+total 672
+drwxr-xr-x 2 runner runner   4096 Oct  5 18:27 .
+drwxr-xr-x 9 runner runner   4096 Oct  5 18:27 ..
+-rw-r--r-- 1 runner runner  38134 Oct  5 18:27 fallback_osm.json
+-rw-r--r-- 1 runner runner 636249 Oct  5 18:28 preload_osm.json
